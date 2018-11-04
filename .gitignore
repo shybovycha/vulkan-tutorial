@@ -1,0 +1,4 @@
+_build
+!dependencies/*.zip
+!dependencies/*.tar.gz
+dependencies
