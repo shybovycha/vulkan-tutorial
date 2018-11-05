@@ -13,5 +13,6 @@ set(SOURCES
 add_executable(vulkan_tutorial ${SOURCES})
 
 find_package(Vulkan REQUIRED)
+find_package(glfw3 3.2 REQUIRED)
 
-target_link_libraries(vulkan_tutorial Vulkan::Vulkan)
+target_link_libraries(vulkan_tutorial Vulkan::Vulkan glfw)
