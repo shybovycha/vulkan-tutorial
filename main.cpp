@@ -33,6 +33,7 @@ protected:
     QueueFamilyIndices queueFamilyIndices;
     VkDevice device;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkQueue graphicsQueue;
 
 public:
     void run() {
@@ -51,6 +52,7 @@ private:
         checkVkExtensions();
         createVkPhysicalDevice();
         createVkLogicalDevice();
+        createVkQueue();
     }
 
     void createVkInstance() {
@@ -169,6 +171,10 @@ private:
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
             throw std::runtime_error("failed to create logical device!");
         }
+    }
+
+    void createVkQueue() {
+        vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value_or(-1), 0, &graphicsQueue);
     }
 
     void createWindow() {
