@@ -18,19 +18,12 @@
 #include <vector>
 #include <optional>
 
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-
-    bool isComplete() {
-        return graphicsFamily.has_value();
-    }
-};
-
 class Application {
 protected:
     GLFWwindow *window;
+
     VkInstance instance;
-    QueueFamilyIndices queueFamilyIndices;
+    std::optional<uint32_t> queueFamilyIndex;
     VkDevice device;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkQueue graphicsQueue;
@@ -133,23 +126,23 @@ private:
 
         for (const auto& queueFamily : queueFamilies) {
             if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                queueFamilyIndices.graphicsFamily = i;
+                queueFamilyIndex = i;
             }
 
-            if (queueFamilyIndices.isComplete()) {
+            if (queueFamilyIndex.has_value()) {
                 break;
             }
 
             i++;
         }
 
-        return queueFamilyIndices.isComplete();
+        return queueFamilyIndex.has_value();
     }
 
     void createVkLogicalDevice() {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value_or(-1);
+        queueCreateInfo.queueFamilyIndex = queueFamilyIndex.value_or(-1);
         queueCreateInfo.queueCount = 1;
 
         float queuePriority = 1.0f;
@@ -174,7 +167,7 @@ private:
     }
 
     void createVkQueue() {
-        vkGetDeviceQueue(device, queueFamilyIndices.graphicsFamily.value_or(-1), 0, &graphicsQueue);
+        vkGetDeviceQueue(device, queueFamilyIndex.value_or(-1), 0, &graphicsQueue);
     }
 
     void createWindow() {
