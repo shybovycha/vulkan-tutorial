@@ -16,6 +16,15 @@
 #include <cstdlib>
 #include <memory>
 #include <vector>
+#include <optional>
+
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};
 
 class Application {
 protected:
@@ -110,15 +119,29 @@ private:
     }
 
     bool isVkDeviceSuitable(VkPhysicalDevice device) {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        // return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
-        // return deviceFeatures.geometryShader;
-        return true;
+        QueueFamilyIndices queueFamilyIndices;
+
+        int i = 0;
+
+        for (const auto& queueFamily : queueFamilies) {
+            if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                queueFamilyIndices.graphicsFamily = i;
+            }
+
+            if (queueFamilyIndices.isComplete()) {
+                break;
+            }
+
+            i++;
+        }
+
+        return queueFamilyIndices.isComplete();
     }
 
     void createWindow() {
