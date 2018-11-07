@@ -30,6 +30,9 @@ class Application {
 protected:
     GLFWwindow *window;
     VkInstance instance;
+    QueueFamilyIndices queueFamilyIndices;
+    VkDevice device;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
 public:
     void run() {
@@ -47,6 +50,7 @@ private:
         createVkInstance();
         checkVkExtensions();
         createVkPhysicalDevice();
+        createVkLogicalDevice();
     }
 
     void createVkInstance() {
@@ -92,8 +96,6 @@ private:
     }
 
     void createVkPhysicalDevice() {
-        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -125,8 +127,6 @@ private:
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        QueueFamilyIndices queueFamilyIndices;
-
         int i = 0;
 
         for (const auto& queueFamily : queueFamilies) {
@@ -142,6 +142,33 @@ private:
         }
 
         return queueFamilyIndices.isComplete();
+    }
+
+    void createVkLogicalDevice() {
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value_or(-1);
+        queueCreateInfo.queueCount = 1;
+
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures = {};
+
+        VkDeviceCreateInfo createInfo = {};
+
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;
+        createInfo.enabledLayerCount = 0;
+
+        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create logical device!");
+        }
     }
 
     void createWindow() {
@@ -163,6 +190,7 @@ private:
     }
 
     void cleanVulkan() {
+        vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
     }
 
