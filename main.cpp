@@ -27,12 +27,13 @@ protected:
     VkDevice device;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkQueue graphicsQueue;
+    VkSurfaceKHR surface;
 
 public:
     void run() {
-        initVulkan();
-
         createWindow();
+
+        initVulkan();
 
         mainLoop();
 
@@ -43,6 +44,7 @@ private:
     void initVulkan() {
         createVkInstance();
         checkVkExtensions();
+        createVkSurface();
         createVkPhysicalDevice();
         createVkLogicalDevice();
         createVkQueue();
@@ -177,6 +179,12 @@ private:
         window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
     }
 
+    void createVkSurface() {
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+    }
+
     void mainLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
@@ -190,6 +198,7 @@ private:
 
     void cleanVulkan() {
         vkDestroyDevice(device, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
     }
 
