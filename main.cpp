@@ -15,14 +15,17 @@
 #include <functional>
 #include <cstdlib>
 #include <memory>
+#include <vector>
 
 class Application {
 protected:
     GLFWwindow *window;
+    VkInstance instance;
 
 public:
     void run() {
         initVulkan();
+
         createWindow();
 
         mainLoop();
@@ -32,16 +35,50 @@ public:
 
 private:
     void initVulkan() {
+        createVkInstance();
+        checkVkExtensions();
+    }
+
+    void createVkInstance() {
+        VkApplicationInfo appInfo = {};
+        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName = "Vulkan Tutorial";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName = "No Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion = VK_API_VERSION_1_0;
+
+        VkInstanceCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
+
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        createInfo.enabledExtensionCount = glfwExtensionCount;
+        createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+        createInfo.enabledLayerCount = 0;
+
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create instance!");
+        }
+    }
+
+    void checkVkExtensions() {
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-        std::cout << extensionCount << " extensions supported" << std::endl;
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        glm::mat4 matrix;
-        glm::vec4 vec;
-        auto test = matrix * vec;
+        std::cout << extensionCount << " Vulkan extensions supported" << std::endl;
 
-        std::cout << "matrix x vector = " << glm::to_string(test) << std::endl;
+        for (const auto& extension : extensions) {
+            std::cout << " - " << extension.extensionName << std::endl;
+        }
     }
 
     void createWindow() {
@@ -58,8 +95,16 @@ private:
     }
 
     void cleanup() {
-        glfwDestroyWindow(window);
+        cleanVulkan();
+        cleanGlfw();
+    }
 
+    void cleanVulkan() {
+        vkDestroyInstance(instance, nullptr);
+    }
+
+    void cleanGlfw() {
+        glfwDestroyWindow(window);
         glfwTerminate();
     }
 };
